@@ -1,32 +1,41 @@
+
+
 services:
   db:
-    image: postgres:16
+    image: postgres:16-alpine
+    container_name: fhir-postgres
     environment:
       POSTGRES_DB: hapi
       POSTGRES_USER: hapi
-      POSTGRES_PASSWORD: hapi_dev_pass
+      POSTGRES_PASSWORD: hapi_secure_password_2026
     volumes:
-      - hapi-db:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U hapi -d hapi"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
+      - postgres_data:/var/lib/postgresql/data
+    restart: always
 
-  fhir:
+  hapi-fhir:
     image: hapiproject/hapi:latest
+    container_name: fhir-server
     depends_on:
-      db:
-        condition: service_healthy
-    ports:
-      - "8080:8080"
+      - db
     environment:
-      spring.datasource.url: jdbc:postgresql://db:5432/hapi
-      spring.datasource.username: hapi
-      spring.datasource.password: hapi_dev_pass
-      spring.datasource.driverClassName: org.postgresql.Driver
-      spring.jpa.properties.hibernate.dialect: ca.uhn.fhir.jpa.model.dialect.HapiFhirPostgresDialect
-      hapi.fhir.fhir_version: R4
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/hapi
+      SPRING_DATASOURCE_USERNAME: hapi
+      SPRING_DATASOURCE_PASSWORD: hapi_secure_password_2026
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
+      HAPI_FHIR_DATABASE_TYPE: POSTGRES_42
+    restart: always
+
+  nginx:
+    image: nginx:alpine
+    container_name: fhir-proxy
+    depends_on:
+      - hapi-fhir
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./.htpasswd:/etc/nginx/.htpasswd:ro
+    restart: always
 
 volumes:
-  hapi-db:
+  postgres_data:
