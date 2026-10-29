@@ -18,11 +18,14 @@ services:
     depends_on:
       - db
     environment:
+      JAVA_OPTS: "-Xms512m -Xmx1536m"
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/hapi
       SPRING_DATASOURCE_USERNAME: hapi
       SPRING_DATASOURCE_PASSWORD: hapi_secure_password_2026
       SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
       HAPI_FHIR_DATABASE_TYPE: POSTGRES_42
+      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.PostgreSQLDialect
+      SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.PostgreSQLDialect
     restart: always
 
   nginx:
